@@ -54,6 +54,7 @@ jobs:
         run: ./mvnw -B -ntp clean test -Dtest="**/vcr/*Test,**/service/*Test,**/controller/*Test" -Dsurefire.failIfNoSpecifiedTests=false
         env:
           SPRING_PROFILES_ACTIVE: ci
+          DOCKER_HOST: unix:///var/run/docker.sock
 
   verify-coverage:
     runs-on: ubuntu-latest
@@ -75,6 +76,7 @@ jobs:
         run: ./mvnw -B -ntp clean verify -Dtest="**/vcr/*Test,**/service/*Test,**/controller/*Test" -Dsurefire.failIfNoSpecifiedTests=false
         env:
           SPRING_PROFILES_ACTIVE: ci
+          DOCKER_HOST: unix:///var/run/docker.sock
 
       - name: Upload JaCoCo report
         if: always()
