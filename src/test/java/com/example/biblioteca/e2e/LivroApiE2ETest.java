@@ -59,8 +59,8 @@ class LivroApiE2ETest {
 
         mockMvc.perform(get("/api/livros"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].titulo").value("1984"));
-
+            
+.andExpect(jsonPath("$[0].titulo").value("1984"));
         String livroId = livroRepository.findAll().get(0).getId();
 
         mockMvc.perform(delete("/api/livros/" + livroId).with(csrf()))

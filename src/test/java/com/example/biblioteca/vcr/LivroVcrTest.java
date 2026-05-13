@@ -12,6 +12,8 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -181,11 +183,15 @@ class LivroVcrTest {
         assertThat(livroService.existePorIsbn("9780000000099")).isTrue();
     }
 
-    @Test
-    void servicoDeveValidarIsbnCorretamente() {
-        assertThat(livroService.isIsbnValido("9780618260300")).isTrue();
-        assertThat(livroService.isIsbnValido("0618260307")).isTrue();
-        assertThat(livroService.isIsbnValido("abc")).isFalse();
-        assertThat(livroService.isIsbnValido("123")).isFalse();
+    @ParameterizedTest
+    @ValueSource(strings = {"9780618260300", "0618260307", "978-0-13-468599-1"})
+    void servicoDeveValidarIsbnValido(String isbnValido) {
+        assertThat(livroService.isIsbnValido(isbnValido)).isTrue();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"abc", "123", "invalid", "978"})
+    void servicoDeveInvalidarIsbnInvalido(String isbnInvalido) {
+        assertThat(livroService.isIsbnValido(isbnInvalido)).isFalse();
     }
 }

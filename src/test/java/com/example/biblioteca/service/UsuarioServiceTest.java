@@ -4,13 +4,15 @@ import com.example.biblioteca.entity.Usuario;
 import com.example.biblioteca.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 class UsuarioServiceTest {
@@ -75,10 +77,22 @@ class UsuarioServiceTest {
         assertThat(usuarioService.existePorEmail("inexistente@example.com")).isFalse();
     }
 
-    @Test
-    void deveValidarEmail() {
-        assertThat(usuarioService.isEmailValido("test@example.com")).isTrue();
-        assertThat(usuarioService.isEmailValido("invalid")).isFalse();
-        assertThat(usuarioService.isEmailValido(null)).isFalse();
+    @ParameterizedTest
+    @ValueSource(strings = {"test@example.com", "user.name@domain.org", "user+tag@example.co.uk", "admin@sub.domain.com"})
+    void deveValidarEmailValido(String emailValido) {
+        assertThat(usuarioService.isEmailValido(emailValido)).isTrue();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"invalid", "no-at-sign.com", "missing@domain", "spaces in@email.com"})
+    void deveInvalidarEmailInvalido(String emailInvalido) {
+        assertThat(usuarioService.isEmailValido(emailInvalido)).isFalse();
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"", "   "})
+    void deveInvalidarEmailNuloOuVazio(String emailInvalido) {
+        assertThat(usuarioService.isEmailValido(emailInvalido)).isFalse();
     }
 }

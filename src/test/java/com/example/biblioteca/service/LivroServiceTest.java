@@ -4,6 +4,8 @@ import com.example.biblioteca.entity.Livro;
 import com.example.biblioteca.repository.LivroRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -83,11 +85,15 @@ class LivroServiceTest {
         assertThat(livroService.existePorIsbn("9780000009999")).isFalse();
     }
 
-    @Test
-    void deveValidarIsbn() {
-        assertThat(livroService.isIsbnValido("9780618260300")).isTrue();
-        assertThat(livroService.isIsbnValido("0618260307")).isTrue();
-        assertThat(livroService.isIsbnValido("abc")).isFalse();
-        assertThat(livroService.isIsbnValido("123")).isFalse();
+    @ParameterizedTest
+    @ValueSource(strings = {"9780618260300", "0618260307", "978-0-13-468599-1", "9780321125217"})
+    void deveValidarIsbnValido(String isbnValido) {
+        assertThat(livroService.isIsbnValido(isbnValido)).isTrue();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"abc", "123", "", "invalid", "978", "1234567890123"})
+    void deveInvalidarIsbnInvalido(String isbnInvalido) {
+        assertThat(livroService.isIsbnValido(isbnInvalido)).isFalse();
     }
 }
