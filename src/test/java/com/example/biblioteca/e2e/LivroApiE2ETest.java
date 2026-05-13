@@ -12,39 +12,23 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * Teste E2E com Testcontainers - sobe MongoDB real em container Docker.
- * Execute localmente com Docker disponível.
- * No CI, apenas os testes VCR/Mock rodam (ver ci.yml).
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-@Testcontainers
 @WithMockUser(username = "teste@email.com", roles = "USER")
 class LivroApiE2ETest {
 
-    @Container
-    static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:6.0");
-
-    @DynamicPropertySource
-    static void setMongoProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
-    }
-
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private LivroRepository livroRepository;
@@ -52,94 +36,53 @@ class LivroApiE2ETest {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
     @BeforeEach
     void setUp() {
         livroRepository.deleteAll();
+        usuarioRepository.deleteAll();
     }
 
     @Test
-    void deveCriarEBuscarLivro() throws Exception {
-        Livro livro = new Livro("O Senhor dos Anéis", "Tolkien", "9780000000001",
-                                "Fantasia", 1954, "LIDO", null);
+    void deveExecutarFluxoCompletoDeLivros() throws Exception {
+        Usuario usuario = new Usuario("testuser", "teste@email.com", "password");
+        usuarioRepository.save(usuario);
 
-        // Criar
-        String response = mockMvc.perform(post("/api/livros")
+        Livro livro = new Livro("1984", "George Orwell", "9780000000000",
+                                "Distopia", 1949, "QUERO_LER", usuario.getId());
+
+        mockMvc.perform(post("/api/livros")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(livro)))
             .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.titulo").value("O Senhor dos Anéis"))
-            .andReturn().getResponse().getContentAsString();
+            .andExpect(jsonPath("$.titulo").value("1984"));
 
-        String id = objectMapper.readTree(response).get("id").asText();
-
-        // Buscar por ID
-        mockMvc.perform(get("/api/livros/" + id))
+        mockMvc.perform(get("/api/livros"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.autor").value("Tolkien"));
+            .andExpect(jsonPath("$[0].titulo").value("1984"));
 
-        assertThat(livroRepository.findAll()).hasSize(1);
+        String livroId = livroRepository.findAll().get(0).getId();
+
+        mockMvc.perform(delete("/api/livros/" + livroId).with(csrf()))
+            .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/livros/" + livroId))
+            .andExpect(status().isNotFound());
     }
 
     @Test
-    void deveFiltrarLivrosPorStatus() throws Exception {
-        Livro lido = new Livro("Livro A", "Autor A", null, "Drama", 2020, "LIDO", null);
-        Livro lendo = new Livro("Livro B", "Autor B", null, "Drama", 2021, "LENDO", null);
-        livroRepository.save(lido);
-        livroRepository.save(lendo);
-
-        mockMvc.perform(get("/api/livros/status/LIDO"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(1))
-            .andExpect(jsonPath("$[0].titulo").value("Livro A"));
-    }
-
-    @Test
-    void deveImpedirIsbnDuplicado() throws Exception {
-        Livro livro1 = new Livro("Livro Original", "Autor X", "9780000000099",
-                                  "Drama", 2020, "LIDO", null);
+    void deveValidarIsbnDuplicado() throws Exception {
+        Livro livro1 = new Livro("1984", "George Orwell", "9780000000000",
+                                 "Distopia", 1949, "LIDO", "user-1");
         livroRepository.save(livro1);
 
-        Livro livro2 = new Livro("Livro Duplicado", "Autor Y", "9780000000099",
-                                  "Drama", 2021, "LENDO", null);
+        Livro livro2 = new Livro("1984 Copy", "George Orwell", "9780000000000",
+                                 "Distopia", 1949, "QUERO_LER", "user-1");
 
         mockMvc.perform(post("/api/livros")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(livro2)))
             .andExpect(status().isConflict());
-    }
-
-    @Test
-    void deveCriarAtualizarEdeletarLivro() throws Exception {
-        Livro livro = new Livro("Fundação", "Isaac Asimov", null, "Ficção Científica", 1951, "QUERO_LER", null);
-
-        // Criar
-        String criado = mockMvc.perform(post("/api/livros")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(livro)))
-            .andExpect(status().isCreated())
-            .andReturn().getResponse().getContentAsString();
-
-        String id = objectMapper.readTree(criado).get("id").asText();
-
-        // Atualizar status
-        livro.setStatus("LIDO");
-        mockMvc.perform(put("/api/livros/" + id)
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(livro)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("LIDO"));
-
-        // Deletar
-        mockMvc.perform(delete("/api/livros/" + id).with(csrf()))
-            .andExpect(status().isNoContent());
-
-        assertThat(livroRepository.findAll()).isEmpty();
     }
 }

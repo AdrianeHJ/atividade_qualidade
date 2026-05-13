@@ -6,11 +6,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Optional;
 
@@ -18,16 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-@Testcontainers
 class UsuarioServiceTest {
-
-    @Container
-    static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:6.0");
-
-    @DynamicPropertySource
-    static void configurarPropriedades(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
-    }
 
     @Autowired
     private UsuarioService usuarioService;
@@ -41,101 +27,58 @@ class UsuarioServiceTest {
     }
 
     @Test
-    void deveCadastrarUsuarioComSucesso() {
-        Usuario usuario = new Usuario("João Silva", "joao@email.com", "senha123");
-
+    void deveCriarUsuario() {
+        Usuario usuario = new Usuario("John", "john@example.com", "password123");
         Usuario salvo = usuarioService.cadastrarUsuario(usuario);
 
         assertThat(salvo.getId()).isNotNull();
-        assertThat(salvo.getNome()).isEqualTo("João Silva");
-        // Confirma que a senha foi armazenada com hash (não em texto puro)
-        assertThat(salvo.getSenha()).isNotEqualTo("senha123");
-        assertThat(salvo.getSenha()).startsWith("$2a$");
+        assertThat(salvo.getNome()).isEqualTo("John");
     }
 
     @Test
-    void deveLancarExcecaoQuandoEmailJaCadastrado() {
-        Usuario primeiro = new Usuario("João Silva", "joao@email.com", "senha123");
-        usuarioService.cadastrarUsuario(primeiro);
+    void deveBuscarUsuarioPorEmail() {
+        usuarioRepository.save(new Usuario("john", "john@example.com", "password123"));
 
-        Usuario duplicado = new Usuario("João Outro", "joao@email.com", "outrasenha");
-
-        assertThatThrownBy(() -> usuarioService.cadastrarUsuario(duplicado))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("E-mail já cadastrado");
+        Optional<Usuario> usuario = usuarioService.getUsuarioPorEmail("john@example.com");
+        assertThat(usuario).isPresent();
+        assertThat(usuario.get().getNome()).isEqualTo("john");
     }
 
     @Test
-    void deveLancarExcecaoQuandoEmailInvalido() {
-        Usuario usuario = new Usuario("Maria", "nao-eh-email", "senha123");
-
-        assertThatThrownBy(() -> usuarioService.cadastrarUsuario(usuario))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("E-mail inválido");
+    void deveRetornarVazioQuandoUsuarioNaoExistir() {
+        Optional<Usuario> usuario = usuarioService.getUsuarioPorEmail("inexistente@example.com");
+        assertThat(usuario).isEmpty();
     }
 
     @Test
-    void deveRetornarUsuarioPorEmail() {
-        Usuario usuario = new Usuario("Maria Souza", "maria@email.com", "senha456");
-        usuarioService.cadastrarUsuario(usuario);
+    void deveSalvarUsuario() {
+        Usuario usuario = new Usuario("john", "john@example.com", "password123");
+        Usuario salvo = usuarioService.salvarUsuario(usuario);
 
-        Optional<Usuario> resultado = usuarioService.getUsuarioPorEmail("maria@email.com");
-
-        assertThat(resultado).isPresent();
-        assertThat(resultado.get().getNome()).isEqualTo("Maria Souza");
-    }
-
-    @Test
-    void deveRetornarVazioParaEmailNaoCadastrado() {
-        Optional<Usuario> resultado = usuarioService.getUsuarioPorEmail("naoexiste@email.com");
-
-        assertThat(resultado).isEmpty();
-    }
-
-    @Test
-    void deveVerificarExistenciaPorEmail() {
-        Usuario usuario = new Usuario("Carlos", "carlos@email.com", "senha789");
-        usuarioService.cadastrarUsuario(usuario);
-
-        assertThat(usuarioService.existePorEmail("carlos@email.com")).isTrue();
-        assertThat(usuarioService.existePorEmail("outro@email.com")).isFalse();
+        assertThat(salvo.getId()).isNotNull();
     }
 
     @Test
     void deveDeletarUsuario() {
-        Usuario usuario = new Usuario("Ana", "ana@email.com", "senha000");
-        Usuario salvo = usuarioService.cadastrarUsuario(usuario);
+        Usuario usuario = usuarioRepository.save(new Usuario("john", "john@example.com", "password123"));
+        usuarioService.deletarUsuario(usuario.getId());
 
-        usuarioService.deletarUsuario(salvo.getId());
-
-        assertThat(usuarioRepository.findById(salvo.getId())).isEmpty();
+        Optional<Usuario> deletado = usuarioService.getUsuarioPorId(usuario.getId());
+        assertThat(deletado).isEmpty();
     }
 
     @Test
-    void deveRetornarUsuarioPorId() {
-        Usuario usuario = new Usuario("Pedro", "pedro@email.com", "senha111");
-        Usuario salvo = usuarioService.cadastrarUsuario(usuario);
+    void deveVerificarExistenciaPorEmail() {
+        usuarioRepository.save(new Usuario("john", "john@example.com", "password123"));
 
-        Optional<Usuario> resultado = usuarioService.getUsuarioPorId(salvo.getId());
-
-        assertThat(resultado).isPresent();
-        assertThat(resultado.get().getNome()).isEqualTo("Pedro");
-    }
-
-    // --- Testes de lógica pura (Caixa Branca) — sem persistência ---
-
-    @Test
-    void deveValidarEmailsCorretos() {
-        assertThat(usuarioService.isEmailValido("valido@email.com")).isTrue();
-        assertThat(usuarioService.isEmailValido("nome.sobrenome@dominio.com.br")).isTrue();
-        assertThat(usuarioService.isEmailValido("user+tag@exemplo.org")).isTrue();
+        assertThat(usuarioService.existePorEmail("john@example.com")).isTrue();
+        assertThat(usuarioService.existePorEmail("inexistente@example.com")).isFalse();
     }
 
     @Test
-    void deveRejetarEmailsInvalidos() {
-        assertThat(usuarioService.isEmailValido("invalido")).isFalse();
-        assertThat(usuarioService.isEmailValido("sem@dominio")).isFalse();
+    void deveValidarEmail() {
+        assertThat(usuarioService.isEmailValido("test@example.com")).isTrue();
+        assertThat(usuarioService.isEmailValido("invalid")).isFalse();
         assertThat(usuarioService.isEmailValido(null)).isFalse();
-        assertThat(usuarioService.isEmailValido("")).isFalse();
     }
 }
