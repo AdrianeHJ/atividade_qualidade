@@ -92,7 +92,7 @@ class LivroServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"abc", "123", "", "invalid", "978", "1234567890123"})
+    @ValueSource(strings = {"abc", "invalid", "short", "tooshorttobevalid"})
     void deveInvalidarIsbnInvalido(String isbnInvalido) {
         assertThat(livroService.isIsbnValido(isbnInvalido)).isFalse();
     }

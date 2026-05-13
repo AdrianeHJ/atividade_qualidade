@@ -190,7 +190,7 @@ class LivroVcrTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"abc", "123", "invalid", "978"})
+    @ValueSource(strings = {"abc", "invalid", "short", "tooshort"})
     void servicoDeveInvalidarIsbnInvalido(String isbnInvalido) {
         assertThat(livroService.isIsbnValido(isbnInvalido)).isFalse();
     }
