@@ -54,6 +54,9 @@ jobs:
       - name: Make Maven wrapper executable
         run: chmod +x mvnw
 
+      - name: Wait for MongoDB
+        run: sleep 10
+
       - name: Run tests
         run: ./mvnw -B -ntp test -Dsurefire.failIfNoSpecifiedTests=false
         env:
@@ -63,6 +66,11 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     needs: test
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
     steps:
       - uses: actions/checkout@v4
 
@@ -75,6 +83,9 @@ jobs:
 
       - name: Make Maven wrapper executable
         run: chmod +x mvnw
+
+      - name: Wait for MongoDB
+        run: sleep 10
 
       - name: Verify with coverage
         run: ./mvnw -B -ntp verify -Pci
