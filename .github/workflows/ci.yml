@@ -49,9 +49,9 @@ jobs:
       - name: Make Maven wrapper executable
         run: chmod +x mvnw
 
-      # No CI: apenas testes de controller (não precisa de Docker)
-      - name: Run controller tests only
-        run: ./mvnw -B -ntp clean test -Dtest="**/controller/*Test" -Dsurefire.failIfNoSpecifiedTests=false
+      # No CI: roda todos os testes
+      - name: Run all tests
+        run: ./mvnw -B -ntp clean test -Dsurefire.failIfNoSpecifiedTests=false
         env:
           SPRING_PROFILES_ACTIVE: ci
 
@@ -72,7 +72,7 @@ jobs:
         run: chmod +x mvnw
 
       - name: Verify without coverage check
-        run: ./mvnw -B -ntp clean verify -Pci -Dtest="**/controller/*Test" -Dsurefire.failIfNoSpecifiedTests=false
+        run: ./mvnw -B -ntp clean verify -Pci -Dsurefire.failIfNoSpecifiedTests=false
         env:
           SPRING_PROFILES_ACTIVE: ci
 
