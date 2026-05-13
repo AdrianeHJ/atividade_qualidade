@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${livro.id} ? 'Editar Livro' : 'Novo Livro'">Livro - Biblioteca Pessoal</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><a th:href="@{/livros}">📚 Biblioteca Pessoal</a></div>
+</nav>
+
+<main class="container">
+    <div class="page-header">
+        <h1 th:text="${livro.id} ? 'Editar Livro' : 'Adicionar Livro'">Livro</h1>
+        <a th:href="@{/livros}" class="btn btn-secondary">← Voltar</a>
+    </div>
+
+    <div class="form-card">
+        <!-- Criação: POST /livros -->
+        <form th:if="${livro.id == null}" th:action="@{/livros}" th:object="${livro}" method="post">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="titulo">Título *</label>
+                    <input type="text" id="titulo" th:field="*{titulo}" required placeholder="Título do livro">
+                </div>
+                <div class="form-group">
+                    <label for="autor">Autor *</label>
+                    <input type="text" id="autor" th:field="*{autor}" required placeholder="Nome do autor">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="isbn">ISBN</label>
+                    <input type="text" id="isbn" th:field="*{isbn}" placeholder="Ex: 978-3-16-148410-0">
+                </div>
+                <div class="form-group">
+                    <label for="genero">Gênero</label>
+                    <input type="text" id="genero" th:field="*{genero}" placeholder="Ex: Ficção Científica">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="anoPublicacao">Ano de Publicação</label>
+                    <input type="number" id="anoPublicacao" th:field="*{anoPublicacao}" placeholder="Ex: 2024" min="1000" max="2099">
+                </div>
+                <div class="form-group">
+                    <label for="status">Status *</label>
+                    <select id="status" th:field="*{status}" required>
+                        <option value="QUERO_LER">🔖 Quero Ler</option>
+                        <option value="LENDO">📖 Lendo</option>
+                        <option value="LIDO">✅ Lido</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Salvar Livro</button>
+                <a th:href="@{/livros}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+
+        <!-- Edição: POST /livros/{id} -->
+        <form th:if="${livro.id != null}" th:action="@{/livros/{id}(id=${livro.id})}" th:object="${livro}" method="post">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="tituloE">Título *</label>
+                    <input type="text" id="tituloE" th:field="*{titulo}" required>
+                </div>
+                <div class="form-group">
+                    <label for="autorE">Autor *</label>
+                    <input type="text" id="autorE" th:field="*{autor}" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="isbnE">ISBN</label>
+                    <input type="text" id="isbnE" th:field="*{isbn}">
+                </div>
+                <div class="form-group">
+                    <label for="generoE">Gênero</label>
+                    <input type="text" id="generoE" th:field="*{genero}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="anoE">Ano de Publicação</label>
+                    <input type="number" id="anoE" th:field="*{anoPublicacao}" min="1000" max="2099">
+                </div>
+                <div class="form-group">
+                    <label for="statusE">Status *</label>
+                    <select id="statusE" th:field="*{status}" required>
+                        <option value="QUERO_LER">🔖 Quero Ler</option>
+                        <option value="LENDO">📖 Lendo</option>
+                        <option value="LIDO">✅ Lido</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Atualizar Livro</button>
+                <a th:href="@{/livros}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</main>
+</body>
+</html>

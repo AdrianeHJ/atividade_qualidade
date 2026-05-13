@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${titulo} + ' - Biblioteca Pessoal'">Biblioteca Pessoal</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand">📚 Biblioteca Pessoal</div>
+    <div class="nav-links" sec:authorize="isAuthenticated()">
+        <a th:href="@{/livros}">Meus Livros</a>
+        <span sec:authentication="name"></span>
+        <form th:action="@{/logout}" method="post" style="display:inline">
+            <button type="submit" class="btn-link">Sair</button>
+        </form>
+    </div>
+</nav>
+
+<main class="container" th:fragment="content">
+    <!-- conteúdo das páginas -->
+</main>
+</body>
+</html>

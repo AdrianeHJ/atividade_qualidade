@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro - Biblioteca Pessoal</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="auth-page">
+<div class="auth-card">
+    <h1>📚 Biblioteca Pessoal</h1>
+    <h2>Criar Conta</h2>
+
+    <div th:if="${erro}" class="alert alert-error" th:text="${erro}"></div>
+
+    <form th:action="@{/registro}" th:object="${usuario}" method="post">
+        <div class="form-group">
+            <label for="nome">Nome completo</label>
+            <input type="text" id="nome" th:field="*{nome}" required placeholder="Seu nome">
+        </div>
+        <div class="form-group">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" th:field="*{email}" required placeholder="seu@email.com">
+        </div>
+        <div class="form-group">
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" th:field="*{senha}" required placeholder="Mínimo 6 caracteres">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Cadastrar</button>
+    </form>
+    <p class="auth-link">Já tem conta? <a th:href="@{/login}">Entrar</a></p>
+</div>
+</body>
+</html>

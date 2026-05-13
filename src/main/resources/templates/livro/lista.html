@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Meus Livros - Biblioteca Pessoal</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><a th:href="@{/livros}">📚 Biblioteca Pessoal</a></div>
+    <div class="nav-links">
+        <span>Olá, <span sec:authentication="name"></span></span>
+        <form th:action="@{/logout}" method="post" style="display:inline">
+            <button type="submit" class="btn-link">Sair</button>
+        </form>
+    </div>
+</nav>
+
+<main class="container">
+    <div class="page-header">
+        <h1>Meus Livros</h1>
+        <a th:href="@{/livros/novo}" class="btn btn-primary">+ Adicionar Livro</a>
+    </div>
+
+    <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
+
+    <!-- Filtros e Busca -->
+    <div class="filtros">
+        <form th:action="@{/livros}" method="get" class="busca-form">
+            <input type="text" name="busca" th:value="${busca}" placeholder="Buscar por título ou autor...">
+            <button type="submit" class="btn btn-secondary">Buscar</button>
+        </form>
+        <div class="status-filtros">
+            <a th:href="@{/livros}" class="badge" th:classappend="${statusFiltro == null} ? 'badge-active' : ''">Todos</a>
+            <a th:href="@{/livros(status='LIDO')}" class="badge badge-lido" th:classappend="${statusFiltro == 'LIDO'} ? 'badge-active' : ''">✅ Lidos</a>
+            <a th:href="@{/livros(status='LENDO')}" class="badge badge-lendo" th:classappend="${statusFiltro == 'LENDO'} ? 'badge-active' : ''">📖 Lendo</a>
+            <a th:href="@{/livros(status='QUERO_LER')}" class="badge badge-quero" th:classappend="${statusFiltro == 'QUERO_LER'} ? 'badge-active' : ''">🔖 Quero Ler</a>
+        </div>
+    </div>
+
+    <!-- Tabela de livros -->
+    <div th:if="${livros.isEmpty()}" class="empty-state">
+        <p>Nenhum livro encontrado. <a th:href="@{/livros/novo}">Adicione o primeiro!</a></p>
+    </div>
+
+    <table th:unless="${livros.isEmpty()}" class="tabela">
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Autor</th>
+                <th>Gênero</th>
+                <th>Ano</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="livro : ${livros}">
+                <td th:text="${livro.titulo}">Título</td>
+                <td th:text="${livro.autor}">Autor</td>
+                <td th:text="${livro.genero}">Gênero</td>
+                <td th:text="${livro.anoPublicacao}">Ano</td>
+                <td>
+                    <span th:text="${livro.status}"
+                          th:class="'badge ' + (${livro.status == 'LIDO'} ? 'badge-lido' : (${livro.status == 'LENDO'} ? 'badge-lendo' : 'badge-quero'))">
+                    </span>
+                </td>
+                <td class="acoes">
+                    <a th:href="@{/livros/{id}/editar(id=${livro.id})}" class="btn btn-sm btn-secondary">Editar</a>
+                    <a th:href="@{/livros/{id}/deletar(id=${livro.id})}" class="btn btn-sm btn-danger"
+                       onclick="return confirm('Remover este livro?')">Remover</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>
