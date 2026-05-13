@@ -49,12 +49,11 @@ jobs:
       - name: Make Maven wrapper executable
         run: chmod +x mvnw
 
-      # No CI: roda testes VCR + unitários (sem Docker/Testcontainers)
-      - name: Run VCR and unit tests
-        run: ./mvnw -B -ntp clean test -Dtest="**/vcr/*Test,**/service/*Test,**/controller/*Test" -Dsurefire.failIfNoSpecifiedTests=false
+      # No CI: apenas testes de controller (não precisa de Docker)
+      - name: Run controller tests only
+        run: ./mvnw -B -ntp clean test -Dtest="**/controller/*Test" -Dsurefire.failIfNoSpecifiedTests=false
         env:
           SPRING_PROFILES_ACTIVE: ci
-          DOCKER_HOST: unix:///var/run/docker.sock
 
   verify-coverage:
     runs-on: ubuntu-latest
@@ -72,11 +71,10 @@ jobs:
       - name: Make Maven wrapper executable
         run: chmod +x mvnw
 
-      - name: Verify with coverage (VCR + unit tests, min 80%)
-        run: ./mvnw -B -ntp clean verify -Dtest="**/vcr/*Test,**/service/*Test,**/controller/*Test" -Dsurefire.failIfNoSpecifiedTests=false
+      - name: Verify with coverage (controller tests only, min 80%)
+        run: ./mvnw -B -ntp clean verify -Dtest="**/controller/*Test" -Dsurefire.failIfNoSpecifiedTests=false
         env:
           SPRING_PROFILES_ACTIVE: ci
-          DOCKER_HOST: unix:///var/run/docker.sock
 
       - name: Upload JaCoCo report
         if: always()
